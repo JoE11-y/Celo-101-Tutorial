@@ -1,2 +1,2 @@
-# Celo-101-Tutorial
+# USING GRAPHQL TO INDEX TRANSACTIONS
 DACADE Bounty Submission
