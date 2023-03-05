@@ -1,27 +1,30 @@
 specVersion: 0.0.5
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: Lottery
     network: celo-alfajores
     source:
-      address: "0xF8D410135Cb5cB1436c26562D016130302d7A3e5"
+      address: "0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE"
       abi: Lottery
-      startBlock: 16527327
+      startBlock: 16530133
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
         - Ended
+        - Joined
         - Started
       abis:
         - name: Lottery
-          file: ./abis/Lottery.json
+          file: Lottery/abis/Lottery.json
       eventHandlers:
-        - event: Ended(uint256,uint256,address)
+        - event: Ended(uint256,uint256,uint256,uint256)
           handler: handleEnded
+        - event: Joined(uint256,uint256,address)
+          handler: handleJoined
         - event: Started(uint256,uint256)
           handler: handleStarted
-      file: ./src/lottery.ts
+      file: Lottery/Lottery.wasm

@@ -18,11 +18,15 @@ import { createEndedEvent } from "./lottery-utils"
 describe("Describe entity assertions", () => {
   beforeAll(() => {
     let lotteryId = BigInt.fromI32(234)
+    let totalPlayers = BigInt.fromI32(234)
+    let winningTicket = BigInt.fromI32(234)
     let winningAmount = BigInt.fromI32(234)
-    let winner = Address.fromString(
-      "0x0000000000000000000000000000000000000001"
+    let newEndedEvent = createEndedEvent(
+      lotteryId,
+      totalPlayers,
+      winningTicket,
+      winningAmount
     )
-    let newEndedEvent = createEndedEvent(lotteryId, winningAmount, winner)
     handleEnded(newEndedEvent)
   })
 
@@ -46,14 +50,20 @@ describe("Describe entity assertions", () => {
     assert.fieldEquals(
       "Ended",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "winningAmount",
+      "totalPlayers",
       "234"
     )
     assert.fieldEquals(
       "Ended",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "winner",
-      "0x0000000000000000000000000000000000000001"
+      "winningTicket",
+      "234"
+    )
+    assert.fieldEquals(
+      "Ended",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
+      "winningAmount",
+      "234"
     )
 
     // More assert options:

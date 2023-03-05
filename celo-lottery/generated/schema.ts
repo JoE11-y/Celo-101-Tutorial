@@ -51,6 +51,24 @@ export class Ended extends Entity {
     this.set("lotteryId", Value.fromBigInt(value));
   }
 
+  get totalPlayers(): BigInt {
+    let value = this.get("totalPlayers");
+    return value!.toBigInt();
+  }
+
+  set totalPlayers(value: BigInt) {
+    this.set("totalPlayers", Value.fromBigInt(value));
+  }
+
+  get winningTicket(): BigInt {
+    let value = this.get("winningTicket");
+    return value!.toBigInt();
+  }
+
+  set winningTicket(value: BigInt) {
+    this.set("winningTicket", Value.fromBigInt(value));
+  }
+
   get winningAmount(): BigInt {
     let value = this.get("winningAmount");
     return value!.toBigInt();
@@ -60,13 +78,90 @@ export class Ended extends Entity {
     this.set("winningAmount", Value.fromBigInt(value));
   }
 
-  get winner(): Bytes {
-    let value = this.get("winner");
+  get blockNumber(): BigInt {
+    let value = this.get("blockNumber");
+    return value!.toBigInt();
+  }
+
+  set blockNumber(value: BigInt) {
+    this.set("blockNumber", Value.fromBigInt(value));
+  }
+
+  get blockTimestamp(): BigInt {
+    let value = this.get("blockTimestamp");
+    return value!.toBigInt();
+  }
+
+  set blockTimestamp(value: BigInt) {
+    this.set("blockTimestamp", Value.fromBigInt(value));
+  }
+
+  get transactionHash(): Bytes {
+    let value = this.get("transactionHash");
     return value!.toBytes();
   }
 
-  set winner(value: Bytes) {
-    this.set("winner", Value.fromBytes(value));
+  set transactionHash(value: Bytes) {
+    this.set("transactionHash", Value.fromBytes(value));
+  }
+}
+
+export class Joined extends Entity {
+  constructor(id: Bytes) {
+    super();
+    this.set("id", Value.fromBytes(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Joined entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.BYTES,
+        `Entities of type Joined must have an ID of type Bytes but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Joined", id.toBytes().toHexString(), this);
+    }
+  }
+
+  static load(id: Bytes): Joined | null {
+    return changetype<Joined | null>(store.get("Joined", id.toHexString()));
+  }
+
+  get id(): Bytes {
+    let value = this.get("id");
+    return value!.toBytes();
+  }
+
+  set id(value: Bytes) {
+    this.set("id", Value.fromBytes(value));
+  }
+
+  get lotteryId(): BigInt {
+    let value = this.get("lotteryId");
+    return value!.toBigInt();
+  }
+
+  set lotteryId(value: BigInt) {
+    this.set("lotteryId", Value.fromBigInt(value));
+  }
+
+  get ticketId(): BigInt {
+    let value = this.get("ticketId");
+    return value!.toBigInt();
+  }
+
+  set ticketId(value: BigInt) {
+    this.set("ticketId", Value.fromBigInt(value));
+  }
+
+  get player(): Bytes {
+    let value = this.get("player");
+    return value!.toBytes();
+  }
+
+  set player(value: Bytes) {
+    this.set("player", Value.fromBytes(value));
   }
 
   get blockNumber(): BigInt {

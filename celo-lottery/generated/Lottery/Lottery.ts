@@ -27,11 +27,41 @@ export class Ended__Params {
     return this._event.parameters[0].value.toBigInt();
   }
 
-  get winningAmount(): BigInt {
+  get totalPlayers(): BigInt {
     return this._event.parameters[1].value.toBigInt();
   }
 
-  get winner(): Address {
+  get winningTicket(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get winningAmount(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+}
+
+export class Joined extends ethereum.Event {
+  get params(): Joined__Params {
+    return new Joined__Params(this);
+  }
+}
+
+export class Joined__Params {
+  _event: Joined;
+
+  constructor(event: Joined) {
+    this._event = event;
+  }
+
+  get lotteryId(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+
+  get ticketId(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get player(): Address {
     return this._event.parameters[2].value.toAddress();
   }
 }

@@ -21,17 +21,48 @@
             {
                 "indexed": false,
                 "internalType": "uint256",
+                "name": "totalPlayers",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "winningTicket",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
                 "name": "winningAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "Ended",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "lotteryId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "ticketId",
                 "type": "uint256"
             },
             {
                 "indexed": false,
                 "internalType": "address",
-                "name": "winner",
+                "name": "player",
                 "type": "address"
             }
         ],
-        "name": "Ended",
+        "name": "Joined",
         "type": "event"
     },
     {

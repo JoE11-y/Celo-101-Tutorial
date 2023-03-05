@@ -1,8 +1,19 @@
 type Ended @entity(immutable: true) {
   id: Bytes!
   lotteryId: BigInt! # uint256
+  totalPlayers: BigInt! # uint256
+  winningTicket: BigInt! # uint256
   winningAmount: BigInt! # uint256
-  winner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Joined @entity(immutable: true) {
+  id: Bytes!
+  lotteryId: BigInt! # uint256
+  ticketId: BigInt! # uint256
+  player: Bytes! # address
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

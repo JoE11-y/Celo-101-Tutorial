@@ -14,7 +14,7 @@ Subgraphs are made up of a few main parts:
 
 2. Subgraph Manifest (yaml configuration): (from the docs) The manifest defines the smart contracts your subgraph indexes, their ABIs, which events from these contracts to pay attention to, and how to map event data to entities that Graph Node stores and allows to query.
 
-3. AssemblyScript Mappings: This allows you to save data to be indexed using the entity types defined in your schema. The Graph CLI also generates AssemblyScript types using a combination of the subgraph's schema along with a smart contract's ABIs.
+3. AssemblyScript Mappings: This allows you to save data to be indexed using the entity types defined in your schema. This is written in TypeScript which is then compiled to AssemblyScript.
 
 ## Prerequisites
 
@@ -35,6 +35,8 @@ Subgraphs are made up of a few main parts:
 There are two ways to create a new subgraph. We can either choose to make it from an example subgraph, or from an existing smart contract.
 
 In this tutorial we'll be creating a subgraph from an existing smart contract. The smart contract we'll use is the Lottery smart contract gotten from another tutorial on this platform [Kishore Tutorial Lottery SmartContract](https://dacade.org/communities/celo/courses/celo-tut-101/challenges/2f141e8b-104a-4b29-9a23-44f424b52695/submissions/cd82d935-1b47-4381-9133-60cb0d379fb1). More information about the contract is on the submission page, so if you're feeling out of depth you can choose to pause here and go over Kishore's Tutorial.
+
+Note: I made some changes to the events, so I could use them to parse out more information for the the subgraph apis.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -80,7 +82,8 @@ contract Lottery {
     }
 
     event Started(uint lotteryId, uint entryAmount);
-    event Ended(uint lotteryId, uint winningAmount, address winner);
+    event Joined(uint lotteryId, uint ticketId, address player);
+    event Ended(uint lotteryId, uint totalPlayers, uint winningTicket, uint winningAmount);
 
     error reEntry();
 
@@ -110,6 +113,8 @@ contract Lottery {
             }
         }
         players.push(msg.sender);
+
+        emit Joined(lotteryId, players.length, msg.sender);
     }
 
     function requestRandomness() external onlyOwner onlyIfOpen {
@@ -135,7 +140,8 @@ contract Lottery {
 
         open = false;
         latestRandomizingBlock = 0;
-        emit Ended(lotteryId, lastWinnerAmount, lastWinner);
+
+        emit Ended(lotteryId, players.length, winnerIndex, lastWinnerAmount);
     }
 
     receive() external payable {}
@@ -152,7 +158,7 @@ Next, go to the dashboard and click on Add Subgraph to create a new subgraph.
 Configure your subgraph with the following properties:
 
 ```text
-    Subgraph Name - celolottery
+    Subgraph Name - celo-lottery
     Subtitle - A subgraph for querying Lottery Data
     Optional - Fill the description and GITHUB URL properties
 ```
@@ -177,20 +183,20 @@ $ yarn global add @graphprotocol/graph-cli
 
 Once the Graph CLI is installed, create an abi.json file (this is needed to initialize the graph), compile the contract on [remix](https://remix.ethereum.org/#optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.7+commit.e28d00a7.js&lang=en) and copy the abi into this file. An already compiled version of the contract can be found [here](https://github.com/JoE11-y/Celo-101-Tutorial/blob/main/abi.json), you can also copy from there.
 
-A deployed version of this contract exists @ [0xF8D410135Cb5cB1436c26562D016130302d7A3e5](https://explorer.celo.org/alfajores/address/0xF8D410135Cb5cB1436c26562D016130302d7A3e5/transactions#address-tabs)
+A deployed version of this contract exists @ [0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE](https://explorer.celo.org/alfajores/address/0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE/contracts#address-tabs)
 
 Now on the terminal execute this command to initialize the subgraph
 
 ```bash
 $ graph init --product hosted-service \
-    --from-contract 0xF8D410135Cb5cB1436c26562D016130302d7A3e5 \
+    --from-contract 0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE \
     --network celo-alfajores \
     --contract-name Lottery \
     --abi ./abi.json \
-    joe11-y/celolottery
+    joe11-y/celo-lottery
 ```
 
-The CLI tool will prompt you for some additional information. Just enter as is using the preset values for the arguments. Now for the subgraph name, enter your GitHub username followed by the name of your project. In my case this is joe11-y/CELOLottery.
+The CLI tool will prompt you for some additional information. Just enter as is using the preset values for the arguments. Now for the subgraph name, enter your GitHub username followed by the name of your project. In my case this is joe11-y/celo-lottery.
 
 ![initialization](./images/initialization.png)
 
@@ -198,7 +204,7 @@ Now chances the CLI fails to fetch the ABI and the start Block of the Contract a
 
 ![block](./images/blockNumber.png)
 
-The tool sets up the subgraph in the specified directory `celolottery`.
+The tool sets up the subgraph in the specified directory `celo-lottery`.
 
 Next is to authenticate the subgraph with the access token, so head over to the dashboard and copy the access token, then run this command on your terminal.
 
@@ -223,3 +229,51 @@ Now you can go back to your dashboard and you'll be able to see that your subgra
 ![dashboard1](./images/dashboard1.png)
 
 ### STEP 3: Creating new queries
+
+For us to be able to create our own personalised queries we need to outline what type of data we need to extract from the events. This datatypes are called Entities.
+Another way of describing them is that they are the structure for how the data will be stored in the graph nodes.
+
+So let's define a few of these structures:
+
+- LotteryRound: refers to a lottery round. This entity will store the following:
+
+  - id: the unique identifier for a lottery round and will be equivalent to the lotteryId variable we have in our contract.
+  - entryAmount: the amount paid to participate in the lottery round.
+  - totalPlayers: the total number of players that participated in this lottery round.
+  - prize: the winning prize of that lottery round
+  - winner: the winner of the lottery round.
+  - tickets: information regarding the participating tickets, which is derived from the Ticket entity
+
+- PlayerInfo: refers to a player that has participated in at least one round. This entity will store the following
+  - id: The player id when compared to the number of
+
+- TicketInfo: refers to a ticket bought in a lottery round.
+
+Open up the schema.graphql file and enter these new entities.
+
+```typescript
+
+type LotteryRound @entity {
+  id: ID!
+  entryAmount: BigInt!
+  totalPlayers: Int!
+  prize: BigInt!
+  winner: PlayerInfo!
+  tickets: [TicketInfo!] @derivedFrom(field: "lotteryround")
+}
+
+type PlayerInfo @entity {
+  id: ID!
+  address: Bytes!
+}
+
+type TicketInfo @entity {
+  id: ID!
+  player: PlayerInfo!
+  lotteryRound: LotteryRound!
+  isWinner: Boolean!
+}
+
+```
+
+To learn more about how to define entities, check out The graphs documentation on that [link](https://thegraph.com/docs/en/developing/creating-a-subgraph/#defining-entities).
