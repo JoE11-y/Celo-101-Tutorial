@@ -1,4 +1,4 @@
-# Using The Graph To Index Transactions
+# Using the Graph to Index Transactions
 
 ## Introduction
 
@@ -18,7 +18,7 @@ Subgraphs are made up of a few main parts:
 
 
 ### Table Of Contents
-- [Using The Graph To Index Transactions](#using-the-graph-to-index-transactions)
+- [Using the Graph to Index Transactions](#using-the-graph-to-index-transactions)
   - [Introduction](#introduction)
     - [Table Of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
