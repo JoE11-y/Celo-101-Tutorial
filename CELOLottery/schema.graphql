@@ -1,0 +1,18 @@
+type Ended @entity(immutable: true) {
+  id: Bytes!
+  lotteryId: BigInt! # uint256
+  winningAmount: BigInt! # uint256
+  winner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Started @entity(immutable: true) {
+  id: Bytes!
+  lotteryId: BigInt! # uint256
+  entryAmount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
