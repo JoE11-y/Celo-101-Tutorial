@@ -1,0 +1,20 @@
+type LotteryRound @entity {
+  id: ID!
+  entryAmount: BigInt!
+  totalPlayers: Int!
+  prize: BigInt!
+  tickets: [TicketInfo!]! @derivedFrom(field: "lotteryRound")
+}
+
+type PlayerInfo @entity {
+  id: ID!
+  address: Bytes!
+  tickets: [TicketInfo!] @derivedFrom(field: "player")
+}
+
+type TicketInfo @entity {
+  id: ID!
+  player: PlayerInfo!
+  lotteryRound: LotteryRound!
+  isWinner: Boolean!
+}

@@ -256,7 +256,6 @@ So let's define a few of these structures:
   - entryAmount: the amount paid to participate in the lottery round.
   - totalPlayers: the total number of players that participated in this lottery round.
   - prize: the winning prize of that lottery round
-  - winner: the winner of the lottery round.
   - tickets: a one to many mapping of the LotteryRound to the tickets
 
 - PlayerInfo: refers to the information of a player participated in at least one round. This entity will store the following
@@ -279,7 +278,6 @@ type LotteryRound @entity {
   entryAmount: BigInt!
   totalPlayers: Int!
   prize: BigInt!
-  winner: Bytes!
   tickets: [TicketInfo!]! @derivedFrom(field: "lotteryRound")
 }
 
@@ -450,7 +448,6 @@ export function handleEnded(event: EndedEvent): void {
 
   lotteryEntity.totalPlayers = totalPlayer;
   lotteryEntity.prize = winningAmount;
-  lotteryEntity.winner = winner;
   lotteryEntity.save();
 
   let playerId = winner.toHex();
@@ -559,7 +556,6 @@ export function handleEnded(event: EndedEvent): void {
 
   lotteryEntity.totalPlayers = totalPlayer;
   lotteryEntity.prize = winningAmount;
-  lotteryEntity.winner = winner;
   lotteryEntity.save();
 
   let playerId = winner.toHex();

@@ -1,0 +1,30 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LotteryV2
+    network: celo-alfajores
+    source:
+      address: "0x0A886c0749a129724BB712C451897d9B688CEA8c"
+      abi: LotteryV2
+      startBlock: 16533102
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - LotteryRound
+        - TicketInfo
+        - PlayerInfo
+      abis:
+        - name: LotteryV2
+          file: ./abis/LotteryV2.json
+      eventHandlers:
+        - event: Ended(uint256,uint256,uint256,uint256,address)
+          handler: handleEnded
+        - event: Joined(uint256,uint256,address)
+          handler: handleJoined
+        - event: Started(uint256,uint256)
+          handler: handleStarted
+      file: ./src/lottery-v-2.ts

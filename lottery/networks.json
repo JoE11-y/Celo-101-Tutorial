@@ -1,0 +1,8 @@
+{
+  "celo-alfajores": {
+    "LotteryV2": {
+      "address": "0x0A886c0749a129724BB712C451897d9B688CEA8c",
+      "startBlock": 16533102
+    }
+  }
+}
