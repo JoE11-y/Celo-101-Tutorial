@@ -36,19 +36,20 @@ There are two ways to create a new subgraph. We can either choose to make it fro
 
 In this tutorial we'll be creating a subgraph from an existing smart contract. The smart contract we'll use is the Lottery smart contract gotten from another tutorial on this platform [Kishore Tutorial Lottery SmartContract](https://dacade.org/communities/celo/courses/celo-tut-101/challenges/2f141e8b-104a-4b29-9a23-44f424b52695/submissions/cd82d935-1b47-4381-9133-60cb0d379fb1). More information about the contract is on the submission page, so if you're feeling out of depth you can choose to pause here and go over Kishore's Tutorial.
 
-Note: I made some changes to the events, so I could use them to parse out more information for the the subgraph apis.
+Note: I updated the events, so I could use them to parse out more information for the the subgraph apis.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// if compiling on hardhat or truffle
 // import "witnet-solidity-bridge/contracts/interfaces/IWitnetRandomness.sol";
 
 //if compiling on remix
 import "https://github.com/witnet/witnet-solidity-bridge/contracts/interfaces/IWitnetRandomness.sol";
 
 
-contract Lottery {
+contract LotteryV2 {
     //Address of the witnet randomness contract in Celo Alfajores testnet
     address witnetAddress = 0xbD804467270bCD832b4948242453CA66972860F5;
     IWitnetRandomness public witnet = IWitnetRandomness(witnetAddress);
@@ -83,7 +84,13 @@ contract Lottery {
 
     event Started(uint lotteryId, uint entryAmount);
     event Joined(uint lotteryId, uint ticketId, address player);
-    event Ended(uint lotteryId, uint totalPlayers, uint winningTicket, uint winningAmount);
+    event Ended(
+        uint lotteryId,
+        uint totalPlayers,
+        uint winningTicket,
+        uint winningAmount,
+        address winner
+    );
 
     error reEntry();
 
@@ -114,7 +121,7 @@ contract Lottery {
         }
         players.push(msg.sender);
 
-        emit Joined(lotteryId, players.length, msg.sender);
+        emit Joined(lotteryId - 1, players.length - 1, msg.sender);
     }
 
     function requestRandomness() external onlyOwner onlyIfOpen {
@@ -141,11 +148,19 @@ contract Lottery {
         open = false;
         latestRandomizingBlock = 0;
 
-        emit Ended(lotteryId, players.length, winnerIndex, lastWinnerAmount);
+        emit Ended(
+            lotteryId - 1,
+            players.length,
+            winnerIndex,
+            lastWinnerAmount,
+            lastWinner
+        );
     }
 
     receive() external payable {}
 }
+
+
 ```
 
 To get started, go to [The Graph's Hosted Service](https://thegraph.com/hosted-service) and Login using your GitHub account and visit My Dashboard tab.
@@ -183,28 +198,29 @@ $ yarn global add @graphprotocol/graph-cli
 
 Once the Graph CLI is installed, create an abi.json file (this is needed to initialize the graph), compile the contract on [remix](https://remix.ethereum.org/#optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.7+commit.e28d00a7.js&lang=en) and copy the abi into this file. An already compiled version of the contract can be found [here](https://github.com/JoE11-y/Celo-101-Tutorial/blob/main/abi.json), you can also copy from there.
 
-A deployed version of this contract exists @ [0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE](https://explorer.celo.org/alfajores/address/0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE/contracts#address-tabs)
+A deployed version of this contract exists @ [0x0A886c0749a129724BB712C451897d9B688CEA8c](https://explorer.celo.org/alfajores/address/0x0A886c0749a129724BB712C451897d9B688CEA8c/contracts#address-tabs)
 
 Now on the terminal execute this command to initialize the subgraph
 
 ```bash
 $ graph init --product hosted-service \
-    --from-contract 0x447306B22cdd7C7aD55185ED97a28A2b96fb70AE \
+    --from-contract 0x0A886c0749a129724BB712C451897d9B688CEA8c \
     --network celo-alfajores \
-    --contract-name Lottery \
+    --contract-name LotteryV2 \
     --abi ./abi.json \
-    joe11-y/celo-lottery
+    joe11-y/celo-lottery \
+    lottery
 ```
 
 The CLI tool will prompt you for some additional information. Just enter as is using the preset values for the arguments. Now for the subgraph name, enter your GitHub username followed by the name of your project. In my case this is joe11-y/celo-lottery.
 
 ![initialization](./images/initialization.png)
 
-Now chances the CLI fails to fetch the ABI and the start Block of the Contract are high, so you may have to respecify when queried about the `ABI file (path)` and the block number. The ABI file path is already known in this case as `./abi.json`, while the start blocknumber can be gotten from the [celo explorer](https://explorer.celo.org/alfajores/tx/0x7501ff8ef3b641645fa0e79d40b88472235fa2287625411e6fc4eeab7e060ffb) for the contract creation.
+Now chances the CLI fails to fetch the ABI and the start Block of the Contract are high, so you may have to respecify when queried about the `ABI file (path)` and the block number. The ABI file path is already known in this case as `./abi.json`, while the start blocknumber can be gotten from the [celo explorer](https://explorer.celo.org/alfajores/tx/0xadb031bb35a9bf528060cdaf8730326e2605ad9440ef6591ce7e115fa50655d5) for the contract creation.
 
 ![block](./images/blockNumber.png)
 
-The tool sets up the subgraph in the specified directory `celo-lottery`.
+The tool sets up the subgraph in the specified directory `lottery`.
 
 Next is to authenticate the subgraph with the access token, so head over to the dashboard and copy the access token, then run this command on your terminal.
 
@@ -244,10 +260,15 @@ So let's define a few of these structures:
   - winner: the winner of the lottery round.
   - tickets: information regarding the participating tickets, which is derived from the Ticket entity
 
-- PlayerInfo: refers to a player that has participated in at least one round. This entity will store the following
-  - id: The player id when compared to the number of
+- PlayerInfo: refers to the information of a player participated in at least one round. This entity will store the following
+  - id: The player id when compared to the number of number of players (this number is same as the ticket ID)
+  - address: The player address (hexadecimal string)
 
 - TicketInfo: refers to a ticket bought in a lottery round.
+
+  - player: The information of the player with the ticket
+  - lotteryRound: the lottery round where that ticket was bought
+  - isWinner: status if ticket is winning ticket.
 
 Open up the schema.graphql file and enter these new entities.
 
@@ -258,13 +279,13 @@ type LotteryRound @entity {
   entryAmount: BigInt!
   totalPlayers: Int!
   prize: BigInt!
-  winner: PlayerInfo!
-  tickets: [TicketInfo!] @derivedFrom(field: "lotteryround")
+  tickets: [TicketInfo!]! @derivedFrom(field: "lotteryRound")
 }
 
 type PlayerInfo @entity {
   id: ID!
   address: Bytes!
+  tickets: [TicketInfo!] @derivedFrom(field: "player")
 }
 
 type TicketInfo @entity {
@@ -277,3 +298,164 @@ type TicketInfo @entity {
 ```
 
 To learn more about how to define entities, check out The graphs documentation on that [link](https://thegraph.com/docs/en/developing/creating-a-subgraph/#defining-entities).
+
+Okay, Now that we have created the GraphQL schema for our app, we can generate the entities locally to start using in the mappings created by the CLI:
+
+`graph codegen`
+
+In order to make working smart contracts, events and entities easy and type-safe, the Graph CLI generates AssemblyScript types from a combination of the subgraph's GraphQL schema and the contract ABIs included in the data sources.
+
+![codegen](./images/codegen.png)
+
+The generated mappings are found in the schema.ts file which is found in the generated folder.
+
+Next is to update the subgraph with our new entities and mappings.
+
+First open the subgraph.yaml file and add to the dataSources.mapping.entities field with the LotteryRound, PlayerInfo and TicketInfo entities.
+
+So now your subgraph.yaml should look like this
+
+```yaml
+
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LotteryV2
+    network: celo-alfajores
+    source:
+      address: "0x0A886c0749a129724BB712C451897d9B688CEA8c"
+      abi: LotteryV2
+      startBlock: 16533102
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - LotteryRound
+        - TicketInfo
+        - PlayerInfo
+      abis:
+        - name: LotteryV2
+          file: ./abis/LotteryV2.json
+      eventHandlers:
+        - event: Ended(uint256,uint256,uint256,uint256,address)
+          handler: handleEnded
+        - event: Joined(uint256,uint256,address)
+          handler: handleJoined
+        - event: Started(uint256,uint256)
+          handler: handleStarted
+      file: ./src/lottery-v-2.ts
+
+```
+
+Next, is to open the `src/lottery.ts` and write the update the mappings to handle our new entities.
+This lottery.ts file initially contains the code generated by the Graph CLI that contains some functions each pointing to one of the events that you created in the contract. These functions also called handlers are there to load the event data, check if an entry already exists, arrange the data as desired, and save the entry.
+
+Recall from the smart contract that we have three events
+
+```solidity
+    event Started(uint lotteryId, uint entryAmount);
+    event Joined(uint lotteryId, uint ticketId, address player);
+    event Ended(uint lotteryId, uint totalPlayers, uint winningTicket, uint);
+```
+
+So for our first event which is Started we'll update the handler as thus
+
+```typescript
+export function handleStarted(event: StartedEvent): void {
+  let lotteryId = event.params.lotteryId.toString();
+  let entity = LotteryRound.load(lotteryId);
+
+  if (!entity) {
+    entity = new LotteryRound(lotteryId);
+  }
+  entity.prize = BigInt.fromU32(0);
+  entity.totalPlayers = 0;
+  entity.entryAmount = event.params.entryAmount;
+  entity.save()
+}
+```
+
+And for the next event which is the `Joined` we'll update the handle as thus
+
+```typescript
+export function handleJoined(event: JoinedEvent): void {
+  let lotteryId = event.params.lotteryId.toString();
+  let ticketIndex = event.params.ticketId.toString();
+  let player = event.params.player;
+
+  let lotteryEntity = LotteryRound.load(lotteryId);
+  if (!lotteryEntity) {
+    return;
+  }
+
+  // update total players
+  let totalPlayers = lotteryEntity.totalPlayers;
+  lotteryEntity.totalPlayers = totalPlayers + 1;
+
+  lotteryEntity.save();
+
+  // create playerinfo
+  let playerId = player.toHex()
+  let playerEntity = PlayerInfo.load(playerId);
+
+  if (!playerEntity) {
+    playerEntity = new PlayerInfo(playerId);
+  }
+
+  playerEntity.address = player;
+  playerEntity.save();
+
+  // create ticketrecord
+  let ticketId = lotteryId + "-" + playerId + "-" + ticketIndex;
+
+  let ticketEntity = TicketInfo.load(ticketId);
+
+  if (!ticketEntity) {
+    ticketEntity = new TicketInfo(ticketId);
+  }
+
+  ticketEntity.lotteryRound = lotteryId;
+  ticketEntity.player = playerId;
+  ticketEntity.isWinner = false;
+
+  ticketEntity.save();
+}
+```
+
+Now lastly for the `Ended` event update the handle to
+
+```typescript
+export function handleEnded(event: EndedEvent): void {
+  let lotteryId = event.params.lotteryId.toString();
+  let totalPlayer = event.params.totalPlayers.toU32();
+  let winningTicketIndex = event.params.winningTicket.toString();
+  let winningAmount = event.params.winningAmount;
+  let winner = event.params.winner;
+
+  let lotteryEntity = LotteryRound.load(lotteryId);
+
+  if (!lotteryEntity) {
+    return
+  }
+
+  lotteryEntity.totalPlayers = totalPlayer;
+  lotteryEntity.prize = winningAmount;
+  lotteryEntity.save();
+
+  let playerId = winner.toHex();
+  let ticketId = lotteryId + "-" + playerId + "-" + winningTicketIndex;
+
+  let ticketEntity = TicketInfo.load(ticketId);
+
+  if (!ticketEntity) {
+    return
+  }
+
+  ticketEntity.isWinner = true;
+
+  ticketEntity.save()
+}
+```
