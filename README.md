@@ -1,4 +1,4 @@
-# USING THE GRAPH TO INDEX TRANSACTIONS
+# Using The Graph To Index Transactions
 
 ## Introduction
 
@@ -15,6 +15,19 @@ Subgraphs are made up of a few main parts:
 2. Subgraph Manifest (yaml configuration): (from the docs) The manifest defines the smart contracts your subgraph indexes, their ABIs, which events from these contracts to pay attention to, and how to map event data to entities that Graph Node stores and allows querying.
 
 3. AssemblyScript Mappings: This allows you to save data to be indexed using the entity types defined in your schema. This is written in TypeScript which is then compiled into AssemblyScript.
+
+
+### Table Of Contents
+- [Using The Graph To Index Transactions](#using-the-graph-to-index-transactions)
+  - [Introduction](#introduction)
+    - [Table Of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Requirements](#requirements)
+  - [Tutorial](#tutorial)
+    - [STEP 1: Creating the Subgraph](#step-1-creating-the-subgraph)
+    - [STEP 2: Initializing And Deploying the Subgraph](#step-2-initializing-and-deploying-the-subgraph)
+    - [STEP 3: Creating new queries](#step-3-creating-new-queries)
+  - [Conclusion](#conclusion)
 
 ## Prerequisites
 
@@ -614,6 +627,8 @@ Here's a couple of queries, you can try in the playground
   }
 }
 ```
+
+## Conclusion
 
 To tinker on your own and create more queries. Use the Graph explorer button to access all the queries available.
 ![graphExplorer](./images/graphExplorer.png)
